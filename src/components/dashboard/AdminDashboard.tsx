@@ -1,41 +1,17 @@
-
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Bell, LogOut, Plus, Search, Settings, Users, BarChart3, FolderPlus, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Users, 
-  UserPlus, 
-  Activity, 
-  TrendingUp, 
-  Shield, 
-  User, 
-  Code, 
-  TestTube, 
-  Eye,
-  Search,
-  Filter,
-  MoreHorizontal,
-  FolderOpen,
-  Settings,
-  Bell,
-  Zap,
-  ArrowLeft,
-  LogOut
-} from "lucide-react";
-import { useAdminData } from "@/hooks/useAdminData";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import AdminStats from "./AdminStats";
 import AdminUserManagement from "./AdminUserManagement";
 import AdminTaskManagement from "./AdminTaskManagement";
 import AdminProjectManagement from "./AdminProjectManagement";
-import AdminStats from "./AdminStats";
+import NotificationPanel from "./NotificationPanel";
 
 interface AdminDashboardProps {
   user: {
@@ -48,331 +24,190 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard = ({ user }: AdminDashboardProps) => {
-  const { 
-    users, 
-    tasks, 
-    loading, 
-    refreshData,
-    createUser,
-    updateUser,
-    deleteUser,
-    createTask,
-    updateTask,
-    deleteTask
-  } = useAdminData();
-  const { createNotification } = useNotifications();
   const { signOut } = useAuth();
-  const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
   const [activeTab, setActiveTab] = useState("overview");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [showNotifications, setShowNotifications] = useState(false);
 
-  const isAdmin = user.role === 'admin';
-  const isProjectManager = user.role === 'project_manager';
+  const getRoleColor = (role: string) => {
+    const colors = {
+      admin: "bg-gradient-to-r from-red-500 to-pink-500",
+      project_manager: "bg-gradient-to-r from-blue-500 to-cyan-500"
+    };
+    return colors[role as keyof typeof colors] || "bg-gradient-to-r from-blue-500 to-cyan-500";
+  };
+
+  const getRoleDisplayName = (role: string) => {
+    const names = {
+      admin: "Admin",
+      project_manager: "Project Manager"
+    };
+    return names[role as keyof typeof names] || role;
+  };
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/');
+    // Force navigation to home after logout
+    window.location.href = '/';
   };
 
   const handleBackToLanding = () => {
-    navigate('/');
+    // Force navigation to landing page
+    window.location.href = '/';
   };
 
-  // Enhanced user creation with notifications
-  const handleCreateUser = async (userData: {
-    first_name: string;
-    last_name: string;
-    role: string;
-    email: string;
-  }) => {
-    const result = await createUser(userData);
-    
-    if (!result.error) {
-      // Notify all users about new user
-      const allUsers = users.filter(u => u.id !== user.id);
-      allUsers.forEach(async (notifyUser) => {
-        await createNotification({
-          user_id: notifyUser.id,
-          type: 'user_added',
-          title: 'New Team Member Added',
-          message: `${userData.first_name} ${userData.last_name} has been added as ${userData.role.replace('_', ' ')}`,
-          read: false
-        });
-      });
-      
-      toast({
-        title: "User Created",
-        description: `${userData.first_name} ${userData.last_name} has been added to the team.`,
-      });
-    }
-    
-    return result;
-  };
-
-  // Enhanced user update with notifications
-  const handleUpdateUser = async (userId: string, updates: any) => {
-    const result = await updateUser(userId, updates);
-    
-    if (!result.error && updates.role) {
-      // Find the updated user
-      const updatedUser = users.find(u => u.id === userId);
-      if (updatedUser) {
-        // Notify all users about role change
-        const allUsers = users.filter(u => u.id !== user.id && u.id !== userId);
-        allUsers.forEach(async (notifyUser) => {
-          await createNotification({
-            user_id: notifyUser.id,
-            type: 'user_added',
-            title: 'User Role Updated',
-            message: `${updatedUser.first_name} ${updatedUser.last_name}'s role has been changed to ${updates.role.replace('_', ' ')}`,
-            read: false
-          });
-        });
-      }
-    }
-    
-    return result;
-  };
-
-  // Enhanced task update with notifications to all relevant users
-  const handleUpdateTask = async (taskId: string, updates: any) => {
-    const result = await updateTask(taskId, updates);
-    
-    if (!result.error) {
-      // Find the updated task
-      const updatedTask = tasks.find(t => t.id === taskId);
-      if (updatedTask) {
-        // Notify developers, testers, and other relevant roles
-        const relevantUsers = users.filter(u => 
-          u.id !== user.id && 
-          (u.role === 'developer' || u.role === 'tester' || u.role === 'project_manager')
-        );
-        
-        relevantUsers.forEach(async (notifyUser) => {
-          let notificationMessage = '';
-          if (updates.status) {
-            notificationMessage = `Task "${updatedTask.title}" status changed to ${updates.status}`;
-          } else if (updates.priority) {
-            notificationMessage = `Task "${updatedTask.title}" priority changed to ${updates.priority}`;
-          } else if (updates.assignee_id) {
-            notificationMessage = `Task "${updatedTask.title}" has been reassigned`;
-          } else {
-            notificationMessage = `Task "${updatedTask.title}" has been updated`;
-          }
-          
-          await createNotification({
-            user_id: notifyUser.id,
-            type: 'task_completed',
-            title: 'Task Updated by Admin',
-            message: notificationMessage,
-            read: false,
-            related_task_id: taskId
-          });
-        });
-      }
-      
-      toast({
-        title: "Task Updated",
-        description: "Task has been updated and team members have been notified.",
-      });
-    }
-    
-    return result;
-  };
-
-  // Enhanced task creation with notifications
-  const handleCreateTask = async (taskData: any) => {
-    const result = await createTask(taskData);
-    
-    if (!result.error) {
-      // Notify relevant team members about new task
-      const relevantUsers = users.filter(u => 
-        u.id !== user.id && 
-        (u.role === 'developer' || u.role === 'tester' || u.role === 'project_manager')
-      );
-      
-      relevantUsers.forEach(async (notifyUser) => {
-        await createNotification({
-          user_id: notifyUser.id,
-          type: 'user_added',
-          title: 'New Task Created',
-          message: `Admin created a new task: "${taskData.title}"`,
-          read: false,
-          related_task_id: result.data?.id
-        });
-      });
-    }
-    
-    return result;
-  };
-
-  if (!isAdmin && !isProjectManager) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center">
-        <Card className="p-8 shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardContent className="text-center space-y-4">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-              <Shield className="h-8 w-8 text-red-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900">Access Denied</h3>
-            <p className="text-gray-600">
-              Admin or Project Manager role required to access this dashboard.
-            </p>
-            <Button onClick={handleBackToLanding} className="mt-4">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Enhanced Admin Header */}
+      <header className="bg-white/90 backdrop-blur-lg border-b border-white/30 shadow-2xl">
+        <div className="flex items-center justify-between px-8 py-5">
+          <div className="flex items-center space-x-6">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToLanding}
+              className="bg-white/80 backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Enhanced Header with 3D effect */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-white/20 shadow-lg">
-        <div className="container mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBackToLanding}
-                  className="bg-white/80 backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Home
-                </Button>
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                  <Shield className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    {isAdmin ? 'Admin Control Center' : 'Project Management Hub'}
-                  </h1>
-                  <p className="text-gray-600">
-                    Manage users, tasks, projects, and monitor system activity in real-time
-                  </p>
-                </div>
+            
+            <div className="flex items-center space-x-3">
+              <div className="w-11 h-11 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                <span className="text-white font-bold text-sm">TT</span>
               </div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">TeamTasker</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={refreshData}
-                className="bg-white/80 backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-              >
-                <Activity className="h-4 w-4 mr-2" />
-                <span>Refresh Data</span>
-              </Button>
-              <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg">
-                <Avatar className="h-8 w-8 ring-2 ring-white/50">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0">
-                  {isAdmin ? 'Admin' : 'PM'}
-                </Badge>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleLogout}
-                className="bg-white/80 backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl text-red-600 hover:text-red-700"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
+            
+            <div className="hidden lg:flex items-center space-x-3">
+              <Search className="h-5 w-5 text-gray-400" />
+              <Input 
+                placeholder="Search users, tasks, projects..." 
+                className="w-80 bg-white/80 backdrop-blur-sm border-white/40 shadow-lg focus:shadow-xl transition-all duration-300"
+              />
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="container mx-auto px-6 py-8 space-y-8">
-        {/* Enhanced Tabs with 3D design */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-white/80 backdrop-blur-sm border border-white/30 shadow-xl rounded-xl p-2">
-            <TabsTrigger 
-              value="overview" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-300"
+          <div className="flex items-center space-x-5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative bg-white/80 backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Dashboard Overview
-            </TabsTrigger>
-            {isAdmin && (
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs border-2 border-white shadow-lg">
+                  {unreadCount}
+                </Badge>
+              )}
+            </Button>
+
+            <div className="flex items-center space-x-3 bg-white/80 backdrop-blur-sm rounded-full px-5 py-2 shadow-lg border border-white/30">
+              <Avatar className="h-9 w-9 ring-2 ring-white/50 shadow-lg">
+                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-600 text-white font-semibold">
+                  {user.name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <div className="hidden md:block">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-900">{user.name}</span>
+                  <Badge className={`${getRoleColor(user.role)} text-white text-xs border-0 shadow-lg`}>
+                    {getRoleDisplayName(user.role)}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLogout}
+              className="bg-white/80 backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl text-red-600 hover:text-red-700"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex">
+        {/* Main Content */}
+        <main className="flex-1 p-8">
+          <div className="mb-7">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-xl p-7">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+                Welcome, {getRoleDisplayName(user.role)} {user.name.split(' ')[0]}!
+              </h2>
+              <p className="text-gray-600">
+                Here's an overview of what's happening across your teams and projects.
+              </p>
+            </div>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <TabsList className="bg-white/80 backdrop-blur-sm border border-white/30 shadow-xl rounded-xl p-2">
+              <TabsTrigger 
+                value="overview" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-300"
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Overview
+              </TabsTrigger>
               <TabsTrigger 
                 value="users" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-300"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-300"
               >
                 <Users className="h-4 w-4 mr-2" />
-                User Management
+                Users
               </TabsTrigger>
-            )}
-            <TabsTrigger 
-              value="projects" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-300"
-            >
-              <FolderOpen className="h-4 w-4 mr-2" />
-              Project Hub
-            </TabsTrigger>
-            <TabsTrigger 
-              value="tasks" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-300"
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              Task Control
-            </TabsTrigger>
-          </TabsList>
+              <TabsTrigger 
+                value="tasks" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-300"
+              >
+                <FolderPlus className="h-4 w-4 mr-2" />
+                Tasks
+              </TabsTrigger>
+              <TabsTrigger 
+                value="projects" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-300"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Projects
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="overview" className="space-y-8">
-            <AdminStats 
-              users={users} 
-              tasks={tasks} 
-              loading={loading}
-              canViewUsers={isAdmin}
-            />
-          </TabsContent>
-
-          {isAdmin && (
-            <TabsContent value="users" className="space-y-8">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-2xl p-8">
-                <AdminUserManagement 
-                  users={users}
-                  loading={loading}
-                  onRefresh={refreshData}
-                  createUser={handleCreateUser}
-                  updateUser={handleUpdateUser}
-                  deleteUser={deleteUser}
-                />
+            <TabsContent value="overview" className="space-y-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-xl p-8">
+                <AdminStats user={user} />
               </div>
             </TabsContent>
-          )}
 
-          <TabsContent value="projects" className="space-y-8">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-2xl p-8">
-              <AdminProjectManagement 
-                canManageAll={isAdmin}
-              />
-            </div>
-          </TabsContent>
+            <TabsContent value="users" className="space-y-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-xl p-8">
+                <AdminUserManagement user={user} />
+              </div>
+            </TabsContent>
 
-          <TabsContent value="tasks" className="space-y-8">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-2xl p-8">
-              <AdminTaskManagement 
-                tasks={tasks}
-                loading={loading}
-                onRefresh={refreshData}
-                canManageAll={isAdmin}
-                createTask={handleCreateTask}
-                updateTask={handleUpdateTask}
-                deleteTask={deleteTask}
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="tasks" className="space-y-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-xl p-8">
+                <AdminTaskManagement user={user} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="projects" className="space-y-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-xl p-8">
+                <AdminProjectManagement user={user} />
+              </div>
+            </TabsContent>
+          </Tabs>
+        </main>
+
+        {/* Notification Panel */}
+        {showNotifications && (
+          <NotificationPanel onClose={() => setShowNotifications(false)} />
+        )}
       </div>
     </div>
   );

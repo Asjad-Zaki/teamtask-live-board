@@ -71,11 +71,13 @@ const Dashboard = ({ user }: DashboardProps) => {
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/');
+    // Force navigation to home after logout
+    window.location.href = '/';
   };
 
   const handleBackToLanding = () => {
-    navigate('/');
+    // Force navigation to landing page
+    window.location.href = '/';
   };
 
   // For Admin and Project Manager users, show the AdminDashboard
