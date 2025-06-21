@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -7,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useAdminData } from "@/hooks/useAdminData";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 import AdminStats from "./AdminStats";
 import AdminUserManagement from "./AdminUserManagement";
 import AdminTaskManagement from "./AdminTaskManagement";
@@ -26,6 +29,16 @@ interface AdminDashboardProps {
 const AdminDashboard = ({ user }: AdminDashboardProps) => {
   const { signOut } = useAuth();
   const { unreadCount } = useNotifications();
+  const { 
+    users,
+    tasks,
+    loading,
+    refetch,
+    createTask,
+    updateTask,
+    deleteTask
+  } = useAdminData();
+  const { canViewUsers, canManageUsers, canManageAllTasks, canManageAllProjects } = useRolePermissions();
   const [activeTab, setActiveTab] = useState("overview");
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -180,25 +193,45 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
 
             <TabsContent value="overview" className="space-y-6">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-xl p-8">
-                <AdminStats user={user} />
+                <AdminStats 
+                  users={users}
+                  tasks={tasks}
+                  loading={loading}
+                  canViewUsers={canViewUsers}
+                />
               </div>
             </TabsContent>
 
             <TabsContent value="users" className="space-y-6">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-xl p-8">
-                <AdminUserManagement user={user} />
+                <AdminUserManagement 
+                  users={users}
+                  loading={loading}
+                  onRefresh={refetch}
+                  canManageUsers={canManageUsers}
+                />
               </div>
             </TabsContent>
 
             <TabsContent value="tasks" className="space-y-6">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-xl p-8">
-                <AdminTaskManagement user={user} />
+                <AdminTaskManagement 
+                  tasks={tasks}
+                  loading={loading}
+                  onRefresh={refetch}
+                  canManageAll={canManageAllTasks}
+                  createTask={createTask}
+                  updateTask={updateTask}
+                  deleteTask={deleteTask}
+                />
               </div>
             </TabsContent>
 
             <TabsContent value="projects" className="space-y-6">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-xl p-8">
-                <AdminProjectManagement user={user} />
+                <AdminProjectManagement 
+                  canManageAll={canManageAllProjects}
+                />
               </div>
             </TabsContent>
           </Tabs>
