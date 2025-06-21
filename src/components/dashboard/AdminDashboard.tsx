@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,12 +32,12 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
     users,
     tasks,
     loading,
-    refetch,
+    refreshData,
     createTask,
     updateTask,
     deleteTask
   } = useAdminData();
-  const { canViewUsers, canManageUsers, canManageAllTasks, canManageAllProjects } = useRolePermissions();
+  const { canViewUsers, canManageUsers, canManageAllTasks, canManageAllProjects } = useRolePermissions(user.role);
   const [activeTab, setActiveTab] = useState("overview");
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -207,8 +206,7 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
                 <AdminUserManagement 
                   users={users}
                   loading={loading}
-                  onRefresh={refetch}
-                  canManageUsers={canManageUsers}
+                  onRefresh={refreshData}
                 />
               </div>
             </TabsContent>
@@ -218,7 +216,7 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
                 <AdminTaskManagement 
                   tasks={tasks}
                   loading={loading}
-                  onRefresh={refetch}
+                  onRefresh={refreshData}
                   canManageAll={canManageAllTasks}
                   createTask={createTask}
                   updateTask={updateTask}

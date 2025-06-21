@@ -12,6 +12,7 @@ interface RolePermissions {
   canEditProjects: boolean;
   canDeleteProjects: boolean;
   canViewProjects: boolean;
+  canManageAllProjects: boolean;
   
   // Task Management
   canCreateTasks: boolean;
@@ -20,6 +21,7 @@ interface RolePermissions {
   canViewTasks: boolean;
   canDragTasks: boolean;
   canAssignTasks: boolean;
+  canManageAllTasks: boolean;
   
   // Special Actions
   canComment: boolean;
@@ -46,12 +48,14 @@ export const useRolePermissions = (userRole: string): RolePermissions => {
       canEditProjects: false,
       canDeleteProjects: false,
       canViewProjects: true,
+      canManageAllProjects: false,
       canCreateTasks: false,
       canEditTasks: false,
       canDeleteTasks: false,
       canViewTasks: true,
       canDragTasks: false,
       canAssignTasks: false,
+      canManageAllTasks: false,
       canComment: false,
       canMarkTested: false,
       canApproveReview: false,
@@ -72,11 +76,13 @@ export const useRolePermissions = (userRole: string): RolePermissions => {
           canCreateProjects: true,
           canEditProjects: true,
           canDeleteProjects: true,
+          canManageAllProjects: true,
           canCreateTasks: true,
           canEditTasks: true,
           canDeleteTasks: true,
           canDragTasks: true,
           canAssignTasks: true,
+          canManageAllTasks: true,
           canComment: true,
           canMarkTested: true,
           canApproveReview: true,
@@ -93,11 +99,13 @@ export const useRolePermissions = (userRole: string): RolePermissions => {
           canCreateProjects: true,
           canEditProjects: true,
           canDeleteProjects: false, // Only admin can delete projects
+          canManageAllProjects: true,
           canCreateTasks: true,
           canEditTasks: true,
           canDeleteTasks: true,
           canDragTasks: true,
           canAssignTasks: true,
+          canManageAllTasks: true,
           canComment: true,
           canMarkTested: true,
           canApproveReview: true,
