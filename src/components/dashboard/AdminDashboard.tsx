@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -31,11 +32,18 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
   const { 
     users,
     tasks,
+    projects,
     loading,
     refreshData,
+    createUser,
+    updateUser,
+    deleteUser,
     createTask,
     updateTask,
-    deleteTask
+    deleteTask,
+    createProject,
+    updateProject,
+    deleteProject
   } = useAdminData();
   const { canViewUsers, canManageUsers, canManageAllTasks, canManageAllProjects } = useRolePermissions(user.role);
   const [activeTab, setActiveTab] = useState("overview");
@@ -58,9 +66,15 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
   };
 
   const handleLogout = async () => {
-    await signOut();
-    // Force navigation to home after logout
-    window.location.href = '/';
+    try {
+      await signOut();
+      // Force navigation to home after logout
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if there's an error, try to navigate away
+      window.location.href = '/';
+    }
   };
 
   const handleBackToLanding = () => {
@@ -195,6 +209,7 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
                 <AdminStats 
                   users={users}
                   tasks={tasks}
+                  projects={projects}
                   loading={loading}
                   canViewUsers={canViewUsers}
                 />
@@ -207,6 +222,9 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
                   users={users}
                   loading={loading}
                   onRefresh={refreshData}
+                  createUser={createUser}
+                  updateUser={updateUser}
+                  deleteUser={deleteUser}
                 />
               </div>
             </TabsContent>
@@ -228,7 +246,13 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
             <TabsContent value="projects" className="space-y-6">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 shadow-xl p-8">
                 <AdminProjectManagement 
+                  projects={projects}
+                  loading={loading}
+                  onRefresh={refreshData}
                   canManageAll={canManageAllProjects}
+                  createProject={createProject}
+                  updateProject={updateProject}
+                  deleteProject={deleteProject}
                 />
               </div>
             </TabsContent>
