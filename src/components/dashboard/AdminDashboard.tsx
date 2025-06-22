@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -230,7 +229,6 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
                   users={users}
                   loading={loading}
                   onRefresh={refreshData}
-                  canManageAll={canManageUsers}
                   createUser={createUser}
                   updateUser={updateUser}
                   deleteUser={deleteUser}
