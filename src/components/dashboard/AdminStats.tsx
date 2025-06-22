@@ -12,18 +12,20 @@ import {
   User,
   Code,
   TestTube,
-  Eye
+  Eye,
+  FolderOpen
 } from "lucide-react";
-import { AdminUser, AdminTask } from "@/hooks/useAdminData";
+import { AdminUser, AdminTask, AdminProject } from "@/hooks/useAdminData";
 
 interface AdminStatsProps {
   users: AdminUser[];
   tasks: AdminTask[];
+  projects: AdminProject[];
   loading: boolean;
   canViewUsers: boolean;
 }
 
-const AdminStats = ({ users, tasks, loading, canViewUsers }: AdminStatsProps) => {
+const AdminStats = ({ users, tasks, projects, loading, canViewUsers }: AdminStatsProps) => {
   const userStats = {
     total: users.length,
     admin: users.filter(u => u.role === 'admin').length,
@@ -43,6 +45,13 @@ const AdminStats = ({ users, tasks, loading, canViewUsers }: AdminStatsProps) =>
     high: tasks.filter(t => t.priority === 'high').length,
     medium: tasks.filter(t => t.priority === 'medium').length,
     low: tasks.filter(t => t.priority === 'low').length,
+  };
+
+  const projectStats = {
+    total: projects.length,
+    active: projects.filter(p => p.status === 'active').length,
+    planning: projects.filter(p => p.status === 'planning').length,
+    completed: projects.filter(p => p.status === 'completed').length,
   };
 
   const completionRate = taskStats.total > 0 
@@ -138,6 +147,60 @@ const AdminStats = ({ users, tasks, loading, canViewUsers }: AdminStatsProps) =>
                   <p className="text-2xl font-bold text-purple-600">{completionRate}%</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Project Statistics */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Project Overview</h3>
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Projects</p>
+                  <p className="text-2xl font-bold">{projectStats.total}</p>
+                </div>
+                <FolderOpen className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Active</p>
+                  <p className="text-2xl font-bold text-green-600">{projectStats.active}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Planning</p>
+                  <p className="text-2xl font-bold text-orange-600">{projectStats.planning}</p>
+                </div>
+                <Clock className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Completed</p>
+                  <p className="text-2xl font-bold text-gray-600">{projectStats.completed}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-gray-600" />
               </div>
             </CardContent>
           </Card>

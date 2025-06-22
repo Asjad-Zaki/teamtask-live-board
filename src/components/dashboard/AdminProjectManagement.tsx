@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,22 +18,35 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
-import { useProjects } from "@/hooks/useProjects";
+import { AdminProject } from "@/hooks/useAdminData";
 import { toast } from "@/hooks/use-toast";
 import AddProjectDialog from "./AddProjectDialog";
 
 interface AdminProjectManagementProps {
+  projects: AdminProject[];
+  loading: boolean;
+  onRefresh: () => Promise<void>;
   canManageAll: boolean;
+  createProject: (projectData: { name: string; description?: string; status: string; }) => Promise<{ data: any; error: any; }>;
+  updateProject: (projectId: string, updates: Partial<AdminProject>) => Promise<{ data: any; error: any; }>;
+  deleteProject: (projectId: string) => Promise<{ error: any; }>;
 }
 
-const AdminProjectManagement = ({ canManageAll }: AdminProjectManagementProps) => {
-  const { projects, loading } = useProjects();
+const AdminProjectManagement = ({ 
+  projects, 
+  loading, 
+  onRefresh, 
+  canManageAll, 
+  createProject, 
+  updateProject, 
+  deleteProject 
+}: AdminProjectManagementProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         (project.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || project.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -70,12 +82,21 @@ const AdminProjectManagement = ({ canManageAll }: AdminProjectManagementProps) =
 
   const handleCreateProject = async (projectData: any) => {
     try {
-      // This would be implemented with actual API call
-      toast({
-        title: "Project Created",
-        description: "New project has been created successfully.",
-      });
-      return { data: projectData, error: null };
+      const result = await createProject(projectData);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: "Failed to create project.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Project Created",
+          description: "New project has been created successfully.",
+        });
+        await onRefresh();
+      }
+      return result;
     } catch (error) {
       toast({
         title: "Error",
@@ -88,15 +109,49 @@ const AdminProjectManagement = ({ canManageAll }: AdminProjectManagementProps) =
 
   const handleStatusUpdate = async (projectId: string, newStatus: string) => {
     try {
-      // This would be implemented with actual API call
-      toast({
-        title: "Project Updated",
-        description: "Project status has been updated successfully.",
-      });
+      const result = await updateProject(projectId, { status: newStatus });
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: "Failed to update project status.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Project Updated",
+          description: "Project status has been updated successfully.",
+        });
+        await onRefresh();
+      }
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to update project status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      const result = await deleteProject(projectId);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete project.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Project Deleted",
+          description: "Project has been deleted successfully.",
+        });
+        await onRefresh();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete project.",
         variant: "destructive",
       });
     }
@@ -165,7 +220,6 @@ const AdminProjectManagement = ({ canManageAll }: AdminProjectManagementProps) =
                 <div className="space-y-2">
                   <div className="flex items-center space-x-3">
                     <CardTitle className="text-lg">{project.name}</CardTitle>
-                    <div className={`w-3 h-3 rounded-full ${getPriorityColor(project.priority)}`}></div>
                     <Badge className={getStatusColor(project.status)}>
                       <div className="flex items-center space-x-1">
                         {getStatusIcon(project.status)}
@@ -176,8 +230,8 @@ const AdminProjectManagement = ({ canManageAll }: AdminProjectManagementProps) =
                   <p className="text-gray-600">{project.description}</p>
                 </div>
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={project.owner_avatar} alt={project.owner_name} />
-                  <AvatarFallback>{project.owner_name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${project.owner_name}`} alt={project.owner_name} />
+                  <AvatarFallback>{(project.owner_name || 'U').split(' ').map(n => n[0]).join('')}</AvatarFallback>
                 </Avatar>
               </div>
             </CardHeader>
@@ -193,41 +247,26 @@ const AdminProjectManagement = ({ canManageAll }: AdminProjectManagementProps) =
               </div>
 
               {/* Project Details */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center space-x-2 text-gray-600">
                   <Calendar className="h-4 w-4" />
-                  <span>Due {new Date(project.due_date).toLocaleDateString()}</span>
+                  <span>Created {new Date(project.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-gray-600">
                   <Users className="h-4 w-4" />
-                  <span>{project.team_members.length} members</span>
+                  <span>{project.members_count || 0} members</span>
                 </div>
                 <div className="flex items-center space-x-2 text-gray-600">
                   <CheckCircle className="h-4 w-4" />
-                  <span>12/16 tasks</span>
-                </div>
-                <div className="text-gray-600">
-                  <span className="capitalize">{project.priority} priority</span>
+                  <span>{project.tasks_count || 0} tasks</span>
                 </div>
               </div>
 
               {/* Actions */}
               <div className="flex items-center justify-between pt-4 border-t">
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Team:</span>
-                  <div className="flex -space-x-2">
-                    {project.team_members.slice(0, 3).map((member, index) => (
-                      <Avatar key={index} className="h-6 w-6 border-2 border-white">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${member}`} alt={member} />
-                        <AvatarFallback className="text-xs">{member[0].toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                    ))}
-                    {project.team_members.length > 3 && (
-                      <div className="h-6 w-6 bg-gray-100 border-2 border-white rounded-full flex items-center justify-center">
-                        <span className="text-xs text-gray-600">+{project.team_members.length - 3}</span>
-                      </div>
-                    )}
-                  </div>
+                  <span className="text-sm text-gray-600">Owner:</span>
+                  <span className="text-sm font-medium">{project.owner_name}</span>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -250,7 +289,12 @@ const AdminProjectManagement = ({ canManageAll }: AdminProjectManagementProps) =
                       <Button variant="outline" size="sm">
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteProject(project.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </>
