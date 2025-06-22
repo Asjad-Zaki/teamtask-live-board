@@ -244,7 +244,7 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
                   tasks={tasks}
                   loading={loading}
                   onRefresh={refreshData}
-                  canManageAll={canManageAllT asks}
+                  canManageAll={canManageAllTasks}
                   createTask={createTask}
                   updateTask={updateTask}
                   deleteTask={deleteTask}
