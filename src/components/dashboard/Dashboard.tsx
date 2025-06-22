@@ -32,7 +32,20 @@ const Dashboard = ({ user }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState("tasks");
   const [showNotifications, setShowNotifications] = useState(false);
 
-  console.log('Dashboard render - user role:', user.role);
+  console.log('Dashboard render - user role:', user.role, 'email:', user.email);
+
+  // For Admin users ONLY, show the AdminDashboard
+  if (user.role === "admin") {
+    console.log('Rendering AdminDashboard for admin user:', user.email);
+    return <AdminDashboard user={user} />;
+  }
+
+  // For Project Manager users, show the regular Dashboard with enhanced permissions
+  if (user.role === "project_manager") {
+    console.log('Rendering enhanced Dashboard for project manager:', user.email);
+  }
+
+  console.log('Rendering regular Dashboard for role:', user.role);
 
   const getRoleColor = (role: string) => {
     const colors = {
@@ -88,14 +101,6 @@ const Dashboard = ({ user }: DashboardProps) => {
     // Force navigation to landing page
     window.location.href = '/';
   };
-
-  // For Admin and Project Manager users, show the AdminDashboard
-  if (user.role === "admin" || user.role === "project_manager") {
-    console.log('Rendering AdminDashboard for role:', user.role);
-    return <AdminDashboard user={user} />;
-  }
-
-  console.log('Rendering regular Dashboard for role:', user.role);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">

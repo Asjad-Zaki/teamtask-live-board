@@ -7,7 +7,7 @@ import LandingPage from "@/components/LandingPage";
 const Index = () => {
   const { user, profile, loading } = useAuth();
 
-  console.log('Index render - user:', user?.id, 'profile:', profile?.role, 'loading:', loading);
+  console.log('Index render - user:', user?.email, 'profile role:', profile?.role, 'loading:', loading);
 
   if (loading) {
     return (
@@ -24,7 +24,18 @@ const Index = () => {
   }
 
   if (user && profile) {
-    console.log('Rendering dashboard for user with role:', profile.role);
+    console.log('Rendering dashboard for user:', user.email, 'with role:', profile.role);
+    
+    // Additional debugging to check the exact role value
+    if (user.email === 'zakicareers.cse@gmail.com') {
+      console.log('Admin user detected:', {
+        email: user.email,
+        profileRole: profile.role,
+        roleType: typeof profile.role,
+        isAdmin: profile.role === 'admin'
+      });
+    }
+    
     return (
       <Dashboard 
         user={{
