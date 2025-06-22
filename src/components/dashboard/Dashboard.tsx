@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useNavigate } from "react-router-dom";
 import KanbanBoard from "./KanbanBoard";
 import UserManagement from "./UserManagement";
 import ProjectOverview from "./ProjectOverview";
@@ -30,9 +29,10 @@ interface DashboardProps {
 const Dashboard = ({ user }: DashboardProps) => {
   const { signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("tasks");
   const [showNotifications, setShowNotifications] = useState(false);
+
+  console.log('Dashboard render - user role:', user.role);
 
   const getRoleColor = (role: string) => {
     const colors = {
@@ -70,20 +70,32 @@ const Dashboard = ({ user }: DashboardProps) => {
   };
 
   const handleLogout = async () => {
-    await signOut();
-    // Force navigation to home after logout
-    window.location.href = '/';
+    console.log('Logout initiated');
+    try {
+      await signOut();
+      // Small delay to allow auth state to update
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/';
+    }
   };
 
   const handleBackToLanding = () => {
+    console.log('Back to landing initiated');
     // Force navigation to landing page
     window.location.href = '/';
   };
 
   // For Admin and Project Manager users, show the AdminDashboard
   if (user.role === "admin" || user.role === "project_manager") {
+    console.log('Rendering AdminDashboard for role:', user.role);
     return <AdminDashboard user={user} />;
   }
+
+  console.log('Rendering regular Dashboard for role:', user.role);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">

@@ -7,6 +7,8 @@ import LandingPage from "@/components/LandingPage";
 const Index = () => {
   const { user, profile, loading } = useAuth();
 
+  console.log('Index render - user:', user?.id, 'profile:', profile?.role, 'loading:', loading);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -22,6 +24,7 @@ const Index = () => {
   }
 
   if (user && profile) {
+    console.log('Rendering dashboard for user with role:', profile.role);
     return (
       <Dashboard 
         user={{
@@ -36,6 +39,7 @@ const Index = () => {
     );
   }
 
+  console.log('Rendering landing page');
   return <LandingPage />;
 };
 

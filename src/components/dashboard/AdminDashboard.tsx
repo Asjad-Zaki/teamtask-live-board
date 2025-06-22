@@ -45,9 +45,16 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
     updateProject,
     deleteProject
   } = useAdminData();
-  const { canViewUsers, canManageUsers, canManageAllTasks, canManageAllProjects } = useRolePermissions(user.role);
+  const { 
+    canViewUsers, 
+    canManageUsers, 
+    canManageAllTasks, 
+    canManageAllProjects 
+  } = useRolePermissions(user.role);
   const [activeTab, setActiveTab] = useState("overview");
   const [showNotifications, setShowNotifications] = useState(false);
+
+  console.log('AdminDashboard render for user:', user.name, 'role:', user.role);
 
   const getRoleColor = (role: string) => {
     const colors = {
@@ -66,19 +73,20 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
   };
 
   const handleLogout = async () => {
+    console.log('Admin logout initiated');
     try {
       await signOut();
-      // Force navigation to home after logout
-      window.location.href = '/';
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if there's an error, try to navigate away
       window.location.href = '/';
     }
   };
 
   const handleBackToLanding = () => {
-    // Force navigation to landing page
+    console.log('Admin back to landing initiated');
     window.location.href = '/';
   };
 
@@ -222,6 +230,7 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
                   users={users}
                   loading={loading}
                   onRefresh={refreshData}
+                  canManageAll={canManageUsers}
                   createUser={createUser}
                   updateUser={updateUser}
                   deleteUser={deleteUser}
@@ -235,7 +244,7 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
                   tasks={tasks}
                   loading={loading}
                   onRefresh={refreshData}
-                  canManageAll={canManageAllTasks}
+                  canManageAll={canManageAllT asks}
                   createTask={createTask}
                   updateTask={updateTask}
                   deleteTask={deleteTask}

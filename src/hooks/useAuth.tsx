@@ -36,6 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('Setting up auth listener...');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -44,8 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile
-          setTimeout(async () => {
+          // Fetch user profile with proper error handling
+          try {
             const { data: profile, error } = await supabase
               .from('profiles')
               .select('*')
@@ -54,10 +56,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             if (error) {
               console.error('Error fetching profile:', error);
+              // If profile doesn't exist, create one
+              if (error.code === 'PGRST116') {
+                console.log('Profile not found, creating one...');
+                const { data: newProfile, error: createError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    id: session.user.id,
+                    first_name: session.user.user_metadata?.first_name || 'User',
+                    last_name: session.user.user_metadata?.last_name || '',
+                    role: (session.user.user_metadata?.role as AppRole) || 'developer',
+                    avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.email}`
+                  })
+                  .select()
+                  .single();
+                
+                if (createError) {
+                  console.error('Error creating profile:', createError);
+                } else {
+                  setProfile(newProfile);
+                }
+              }
             } else {
+              console.log('Profile loaded:', profile);
               setProfile(profile);
             }
-          }, 0);
+          } catch (err) {
+            console.error('Profile fetch error:', err);
+          }
         } else {
           setProfile(null);
         }
@@ -69,12 +95,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (!session) {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('Cleaning up auth listener');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, userData: { firstName: string; lastName: string; role: string }) => {
@@ -128,13 +157,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Clear local state first
+      console.log('Signing out...');
+      
+      const { error } = await supabase.auth.signOut();
+      
+      // Clear local state regardless of error
       setUser(null);
       setProfile(null);
       setSession(null);
-      
-      // Then sign out from Supabase
-      const { error } = await supabase.auth.signOut();
       
       if (error && error.message !== 'Session not found') {
         console.error('Sign out error:', error);
@@ -151,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Sign out error:', error);
-      // Even if there's an error, clear the local state
+      // Clear local state even on error
       setUser(null);
       setProfile(null);
       setSession(null);
@@ -161,7 +191,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) return { error: new Error('No user logged in') };
 
-    // Ensure role is properly typed if it's being updated
     const updateData: any = { ...updates };
     if (updates.role) {
       updateData.role = updates.role as AppRole;
