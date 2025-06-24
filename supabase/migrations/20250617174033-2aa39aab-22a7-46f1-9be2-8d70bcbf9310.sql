@@ -1,5 +1,5 @@
 
--- Create a profiles table to store additional user information
+-- Create  profiles table to store additional user information
 CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   first_name TEXT,
