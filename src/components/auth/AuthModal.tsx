@@ -36,7 +36,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }: AuthModalProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simulate authentication
+    // Simulate authentication for user
     const userData = {
       id: Math.random().toString(36).substr(2, 9),
       name: formData.name || "John Doe",
