@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    allowedHosts: [
+      "vl3zrc-8080.csb.app",
+      "pzmw3d-8080.csb.app",
+    ],
   },
   plugins: [
     react(),
