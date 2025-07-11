@@ -1,7 +1,7 @@
 
-import { useTasks } from "@/hooks/useTasks";
 import KanbanColumn, { TaskStatus } from "./KanbanColumn";
 import { getPriorityColor, getLabelColor } from "./kanbanUtils";
+import { useTasks, useUpdateTask, useDeleteTask } from "@/hooks/queries/useTasks";
 
 interface KanbanBoardProps {
   user: {
@@ -14,9 +14,11 @@ interface KanbanBoardProps {
 }
 
 const KanbanBoard = ({ user }: KanbanBoardProps) => {
-  const { tasks, loading, updateTask, deleteTask } = useTasks();
+  const { data: tasks = [], isLoading } = useTasks();
+  const updateTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -50,7 +52,17 @@ const KanbanBoard = ({ user }: KanbanBoardProps) => {
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     if (!permissions.canEditTasks) return;
     console.log(`Moving task ${taskId} to ${newStatus}`);
-    await updateTask(taskId, { status: newStatus });
+    updateTaskMutation.mutate({ taskId, updates: { status: newStatus } });
+  };
+
+  const handleUpdateTask = async (taskId: string, updates: any) => {
+    if (!permissions.canEditTasks) return;
+    updateTaskMutation.mutate({ taskId, updates });
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!permissions.canDeleteTasks) return;
+    deleteTaskMutation.mutate(taskId);
   };
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
@@ -95,8 +107,8 @@ const KanbanBoard = ({ user }: KanbanBoardProps) => {
             onDragStart={handleDragStart}
             getPriorityColor={getPriorityColor}
             getLabelColor={getLabelColor}
-            onUpdateTask={permissions.canEditTasks ? updateTask : undefined}
-            onDeleteTask={permissions.canDeleteTasks ? deleteTask : undefined}
+            onUpdateTask={permissions.canEditTasks ? handleUpdateTask : undefined}
+            onDeleteTask={permissions.canDeleteTasks ? handleDeleteTask : undefined}
             canEdit={permissions.canEditTasks}
             canCreate={permissions.canCreateTasks}
             canDrag={permissions.canDragTasks}

@@ -14,62 +14,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserPlus } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { useCreateUser } from "@/hooks/queries/useProfiles";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createUserSchema, type CreateUserInput } from "@/lib/schemas";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
-interface AddUserDialogProps {
-  onAddUser: (userData: {
-    first_name: string;
-    last_name: string;
-    role: string;
-    email: string;
-  }) => Promise<{ data: any; error: any }>;
-}
-
-const AddUserDialog = ({ onAddUser }: AddUserDialogProps) => {
+const AddUserDialog = () => {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    role: "developer"
+  const createUserMutation = useCreateUser();
+
+  const form = useForm<CreateUserInput>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      first_name: "",
+      last_name: "",
+      email: "",
+      role: "developer"
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { error } = await onAddUser(formData);
-      
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to create user.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "User created successfully.",
-        });
+  const handleSubmit = async (data: CreateUserInput) => {
+    createUserMutation.mutate(data, {
+      onSuccess: () => {
+        form.reset();
         setOpen(false);
-        setFormData({
-          first_name: "",
-          last_name: "",
-          email: "",
-          role: "developer"
-        });
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create user.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   return (
@@ -87,69 +58,80 @@ const AddUserDialog = ({ onAddUser }: AddUserDialogProps) => {
             Create a new user account with the specified role and permissions.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="first_name" className="text-right">
-                First Name
-              </Label>
-              <Input
-                id="first_name"
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                className="col-span-3"
-                required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <div className="grid gap-4 py-4">
+              <FormField
+                control={form.control}
+                name="first_name"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel className="text-right">First Name</FormLabel>
+                    <FormControl>
+                      <Input className="col-span-3" {...field} />
+                    </FormControl>
+                    <FormMessage className="col-span-3 col-start-2" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel className="text-right">Last Name</FormLabel>
+                    <FormControl>
+                      <Input className="col-span-3" {...field} />
+                    </FormControl>
+                    <FormMessage className="col-span-3 col-start-2" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel className="text-right">Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" className="col-span-3" {...field} />
+                    </FormControl>
+                    <FormMessage className="col-span-3 col-start-2" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel className="text-right">Role</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="project_manager">Project Manager</SelectItem>
+                          <SelectItem value="developer">Developer</SelectItem>
+                          <SelectItem value="tester">Tester</SelectItem>
+                          <SelectItem value="viewer">Viewer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage className="col-span-3 col-start-2" />
+                  </FormItem>
+                )}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="last_name" className="text-right">
-                Last Name
-              </Label>
-              <Input
-                id="last_name"
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                className="col-span-3"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="col-span-3"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">
-                Role
-              </Label>
-              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="project_manager">Project Manager</SelectItem>
-                  <SelectItem value="developer">Developer</SelectItem>
-                  <SelectItem value="tester">Tester</SelectItem>
-                  <SelectItem value="viewer">Viewer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create User"}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button type="submit" disabled={createUserMutation.isPending}>
+                {createUserMutation.isPending ? "Creating..." : "Create User"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
