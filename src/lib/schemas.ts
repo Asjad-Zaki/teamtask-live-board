@@ -69,12 +69,12 @@ export const notificationSchema = z.object({
   related_task_id: z.string().uuid().nullable().optional(),
 });
 
-// Form validation schemas
+// Form validation schemas - Fixed to match form expectations
 export const createTaskSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
-  status: taskStatusSchema.default('todo'),
-  priority: taskPrioritySchema.default('medium'),
+  status: taskStatusSchema,
+  priority: taskPrioritySchema,
   assignee_id: z.string().uuid().optional(),
   due_date: z.string().optional(),
   labels: z.array(z.string()).optional(),
@@ -86,7 +86,7 @@ export const createUserSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
-  role: appRoleSchema.default('developer'),
+  role: appRoleSchema,
 });
 
 export const signInSchema = z.object({
