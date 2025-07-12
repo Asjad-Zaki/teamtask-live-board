@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -177,7 +176,7 @@ const AdminUserManagement = ({
             </div>
           </div>
         </div>
-        <AddUserDialog onAddUser={createUser} />
+        <AddUserDialog />
       </div>
 
       {/* Enhanced Search and Filter */}
@@ -301,7 +300,7 @@ const AdminUserManagement = ({
               </p>
             </div>
             {(!searchTerm && roleFilter === "all") && (
-              <AddUserDialog onAddUser={createUser} />
+              <AddUserDialog />
             )}
           </CardContent>
         </Card>

@@ -99,7 +99,7 @@ export const signUpSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  role: appRoleSchema.default('developer'),
+  role: appRoleSchema,
 });
 
 // Export types

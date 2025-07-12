@@ -57,12 +57,22 @@ const KanbanBoard = ({ user }: KanbanBoardProps) => {
 
   const handleUpdateTask = async (taskId: string, updates: any) => {
     if (!permissions.canEditTasks) return;
-    updateTaskMutation.mutate({ taskId, updates });
+    return new Promise<{ data: any; error: any }>((resolve) => {
+      updateTaskMutation.mutate({ taskId, updates }, {
+        onSuccess: (data) => resolve({ data, error: null }),
+        onError: (error) => resolve({ data: null, error })
+      });
+    });
   };
 
   const handleDeleteTask = async (taskId: string) => {
     if (!permissions.canDeleteTasks) return;
-    deleteTaskMutation.mutate(taskId);
+    return new Promise<{ error: any }>((resolve) => {
+      deleteTaskMutation.mutate(taskId, {
+        onSuccess: () => resolve({ error: null }),
+        onError: (error) => resolve({ error })
+      });
+    });
   };
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
