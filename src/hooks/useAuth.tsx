@@ -22,9 +22,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   // Use React Query hooks
-  const { data: profile } = useProfile(user?.id);
+  const { data: profile, isLoading: profileQueryLoading, error: profileError } = useProfile(user?.id);
   const signInMutation = useSignIn();
   const signUpMutation = useSignUp();
   const signOutMutation = useSignOut();
@@ -39,15 +40,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Auth event:', event, 'Session:', session);
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
+        
+        // If user signs out, stop loading immediately
+        if (event === 'SIGNED_OUT' || !session) {
+          setLoading(false);
+          setProfileLoading(false);
+        }
+        
+        // If user signs in, we'll wait for profile but with a timeout
+        if (event === 'SIGNED_IN' && session?.user) {
+          setProfileLoading(true);
+          // Set a timeout to stop loading even if profile fails
+          setTimeout(() => {
+            setLoading(false);
+            setProfileLoading(false);
+          }, 3000); // 3 second timeout
+        }
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session);
+      setSession(session);
+      setUser(session?.user ?? null);
+      
       if (!session) {
         setLoading(false);
+      } else {
+        // If there's a session, wait for profile with timeout
+        setProfileLoading(true);
+        setTimeout(() => {
+          setLoading(false);
+          setProfileLoading(false);
+        }, 3000);
       }
     });
 
@@ -56,6 +82,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Handle profile loading state
+  useEffect(() => {
+    if (user) {
+      // Profile is loading
+      if (profileQueryLoading && profileLoading) {
+        setLoading(true);
+      } else {
+        // Profile loaded (with or without data) or error occurred
+        setLoading(false);
+        setProfileLoading(false);
+      }
+    } else {
+      // No user, stop loading
+      setLoading(false);
+      setProfileLoading(false);
+    }
+  }, [user, profileQueryLoading, profileLoading, profile, profileError]);
+
+  // Log profile loading issues
+  useEffect(() => {
+    if (profileError) {
+      console.error('Profile loading error:', profileError);
+      setLoading(false);
+      setProfileLoading(false);
+    }
+  }, [profileError]);
 
   const signUp = async (email: string, password: string, userData: { firstName: string; lastName: string; role: string }) => {
     const signUpData: SignUpInput = {

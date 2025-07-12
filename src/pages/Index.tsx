@@ -23,27 +23,30 @@ const Index = () => {
     );
   }
 
-  if (user && profile) {
-    console.log('Rendering dashboard for user:', user.email, 'with role:', profile.role);
+  // If user is authenticated but profile is still loading/missing, show dashboard anyway
+  // This prevents infinite loading when profile fetch fails
+  if (user) {
+    console.log('Rendering dashboard for user:', user.email, 'with profile:', profile);
     
-    // Additional debugging to check the exact role value
-    if (user.email === 'zakicareers.cse@gmail.com') {
-      console.log('Admin user detected:', {
-        email: user.email,
-        profileRole: profile.role,
-        roleType: typeof profile.role,
-        isAdmin: profile.role === 'admin'
-      });
-    }
+    // Create a fallback profile from user metadata if profile is missing
+    const fallbackProfile = profile || {
+      id: user.id,
+      first_name: user.user_metadata?.first_name || 'User',
+      last_name: user.user_metadata?.last_name || '',
+      role: user.user_metadata?.role || 'developer',
+      avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
     
     return (
       <Dashboard 
         user={{
           id: user.id,
-          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User',
+          name: `${fallbackProfile.first_name || ''} ${fallbackProfile.last_name || ''}`.trim() || 'User',
           email: user.email || '',
-          role: profile.role,
-          avatar: profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
+          role: fallbackProfile.role,
+          avatar: fallbackProfile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
         }}
         onLogout={() => {}} // Will be handled by useAuth
       />

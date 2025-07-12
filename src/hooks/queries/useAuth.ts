@@ -8,12 +8,14 @@ import { z } from 'zod';
 const AUTH_QUERY_KEY = ['auth'] as const;
 const PROFILE_QUERY_KEY = ['profile'] as const;
 
-// Get current user profile
+// Get current user profile with better error handling
 export const useProfile = (userId?: string) => {
   return useQuery({
     queryKey: [...PROFILE_QUERY_KEY, userId],
     queryFn: async () => {
       if (!userId) return null;
+
+      console.log('Fetching profile for user:', userId);
 
       const { data, error } = await supabase
         .from('profiles')
@@ -22,13 +24,21 @@ export const useProfile = (userId?: string) => {
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') return null; // Profile not found
+        console.error('Profile fetch error:', error);
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, this might be a new user');
+          return null; // Profile not found
+        }
         throw error;
       }
       
+      console.log('Profile fetched successfully:', data);
       return profileSchema.parse(data);
     },
     enabled: !!userId,
+    retry: 2, // Retry failed requests 2 times
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
   });
 };
 
