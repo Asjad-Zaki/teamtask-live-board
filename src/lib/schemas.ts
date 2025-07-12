@@ -69,7 +69,7 @@ export const notificationSchema = z.object({
   related_task_id: z.string().uuid().nullable().optional(),
 });
 
-// Form validation schemas - Fixed to match form expectations
+// Form validation schemas
 export const createTaskSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
@@ -102,6 +102,74 @@ export const signUpSchema = z.object({
   role: appRoleSchema,
 });
 
+// Project form schemas
+export const createProjectSchema = z.object({
+  name: z.string().min(1, 'Project name is required'),
+  description: z.string().min(1, 'Description is required'),
+  status: projectStatusSchema,
+  priority: projectPrioritySchema,
+  due_date: z.string().min(1, 'Due date is required'),
+});
+
+export const updateProjectSchema = createProjectSchema.partial();
+
+// Landing page schemas
+export const contactFormSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email address'),
+  company: z.string().optional(),
+  message: z.string().min(10, 'Message must be at least 10 characters'),
+});
+
+export const newsletterSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+export const demoRequestSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email address'),
+  company: z.string().min(1, 'Company name is required'),
+  teamSize: z.enum(['1-10', '11-50', '51-200', '200+']),
+  useCase: z.string().min(10, 'Please describe your use case'),
+});
+
+// Search and filter schemas
+export const taskFilterSchema = z.object({
+  status: taskStatusSchema.optional(),
+  priority: taskPrioritySchema.optional(),
+  assignee_id: z.string().uuid().optional(),
+  search: z.string().optional(),
+  labels: z.array(z.string()).optional(),
+});
+
+export const projectFilterSchema = z.object({
+  status: projectStatusSchema.optional(),
+  priority: projectPrioritySchema.optional(),
+  owner_id: z.string().uuid().optional(),
+  search: z.string().optional(),
+});
+
+export const userFilterSchema = z.object({
+  role: appRoleSchema.optional(),
+  search: z.string().optional(),
+});
+
+// Settings schemas
+export const profileUpdateSchema = z.object({
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
+  avatar_url: z.string().url().optional(),
+});
+
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(6, 'Current password is required'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Please confirm your password'),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
 // Export types
 export type Profile = z.infer<typeof profileSchema>;
 export type Task = z.infer<typeof taskSchema>;
@@ -113,3 +181,13 @@ export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type AppRole = z.infer<typeof appRoleSchema>;
+export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+export type ContactFormInput = z.infer<typeof contactFormSchema>;
+export type NewsletterInput = z.infer<typeof newsletterSchema>;
+export type DemoRequestInput = z.infer<typeof demoRequestSchema>;
+export type TaskFilterInput = z.infer<typeof taskFilterSchema>;
+export type ProjectFilterInput = z.infer<typeof projectFilterSchema>;
+export type UserFilterInput = z.infer<typeof userFilterSchema>;
+export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
+export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;

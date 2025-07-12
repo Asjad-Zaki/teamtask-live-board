@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Users, Zap, Shield, Star, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ContactForm from "@/components/landing/ContactForm";
+import NewsletterForm from "@/components/landing/NewsletterForm";
+import DemoRequestForm from "@/components/landing/DemoRequestForm";
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -126,13 +129,16 @@ const LandingPage = () => {
               </div>
               <h1 className="text-xl font-bold text-white">TeamTasker</h1>
             </div>
-            <Button 
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 hover:-translate-y-1"
-              onClick={() => navigate('/auth')}
-            >
-              Get Started
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-4">
+              <DemoRequestForm />
+              <Button 
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 hover:-translate-y-1"
+                onClick={() => navigate('/auth')}
+              >
+                Get Started
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -167,14 +173,17 @@ const LandingPage = () => {
               Start Free Trial
               <ArrowRight className="ml-3 h-6 w-6" />
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-lg px-10 py-8 rounded-2xl border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transform hover:scale-105 hover:-translate-y-2 transition-all duration-300"
-              onClick={() => navigate('/auth')}
-            >
-              View Demo
-            </Button>
+            <DemoRequestForm 
+              trigger={
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-lg px-10 py-8 rounded-2xl border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transform hover:scale-105 hover:-translate-y-2 transition-all duration-300"
+                >
+                  View Demo
+                </Button>
+              }
+            />
           </div>
         </div>
       </section>
@@ -196,7 +205,6 @@ const LandingPage = () => {
               onMouseEnter={() => setHoveredFeature(index)}
               onMouseLeave={() => setHoveredFeature(null)}
             >
-              {/* Gradient overlay */}
               <div
                 className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
               />
@@ -217,7 +225,6 @@ const LandingPage = () => {
                 </CardDescription>
               </CardContent>
 
-              {/* 3D effect border */}
               <div
                 className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 style={{
@@ -246,7 +253,6 @@ const LandingPage = () => {
                 className="group bg-white/10 backdrop-blur-md border border-white/20 hover:border-white/40 shadow-2xl hover:shadow-3xl transform hover:scale-105 hover:-translate-y-4 transition-all duration-500 rounded-3xl overflow-hidden"
               >
                 <CardContent className="p-8 lg:p-10 relative">
-                  {/* Quote decoration */}
                   <div className="absolute top-4 left-4 text-6xl text-white/20 font-serif">"</div>
 
                   <div className="flex mb-6 relative z-10">
@@ -273,7 +279,6 @@ const LandingPage = () => {
                     </div>
                   </div>
 
-                  {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
                 </CardContent>
               </Card>
@@ -282,10 +287,28 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Contact Section */}
+      <section className="relative z-10 container mx-auto px-6 py-20 lg:py-32">
+        <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+          <div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Ready to Get Started?
+            </h2>
+            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+              Have questions or want to learn more about how TeamTasker can transform your team's workflow? 
+              We'd love to hear from you.
+            </p>
+            <NewsletterForm />
+          </div>
+          <div>
+            <ContactForm />
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="relative z-10 container mx-auto px-6 py-20 lg:py-32">
         <Card className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 border-0 text-white shadow-3xl rounded-3xl overflow-hidden transform hover:scale-105 transition-all duration-500">
-          {/* Animated background */}
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 animate-gradient-x"></div>
 
           <CardContent className="relative z-10 text-center p-12 lg:p-20">
@@ -304,7 +327,6 @@ const LandingPage = () => {
             </Button>
           </CardContent>
 
-          {/* Floating elements */}
           <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full animate-float"></div>
           <div className="absolute bottom-10 right-10 w-16 h-16 bg-white/10 rounded-full animate-float animation-delay-2000"></div>
           <div className="absolute top-1/2 right-20 w-12 h-12 bg-white/10 rounded-full animate-float animation-delay-4000"></div>
@@ -321,7 +343,7 @@ const LandingPage = () => {
               </div>
               <h3 className="text-2xl font-bold">TeamTasker</h3>
             </div>
-            <p className="text-gray-400 text-lg">© 2025 TeamTasker. Built by Zaki with modern technology for modern teams.</p>
+            <p className="text-gray-400 text-lg">© 2025 TeamTasker. Built with modern technology for modern teams.</p>
           </div>
         </div>
       </footer>
