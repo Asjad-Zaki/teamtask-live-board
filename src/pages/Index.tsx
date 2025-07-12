@@ -23,8 +23,7 @@ const Index = () => {
     );
   }
 
-  // If user is authenticated but profile is still loading/missing, show dashboard anyway
-  // This prevents infinite loading when profile fetch fails
+  // If user is authenticated, show dashboard
   if (user) {
     console.log('Rendering dashboard for user:', user.email, 'with profile:', profile);
     

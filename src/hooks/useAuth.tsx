@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,10 +21,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   // Use React Query hooks
-  const { data: profile, isLoading: profileQueryLoading, error: profileError } = useProfile(user?.id);
+  const { data: profile, isLoading: profileQueryLoading, error: profileError, isError: profileHasError } = useProfile(user?.id);
   const signInMutation = useSignIn();
   const signUpMutation = useSignUp();
   const signOutMutation = useSignOut();
@@ -34,27 +33,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     console.log('Setting up auth listener...');
     
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth event:', event, 'Session:', session);
         setSession(session);
         setUser(session?.user ?? null);
+        setAuthInitialized(true);
         
         // If user signs out, stop loading immediately
         if (event === 'SIGNED_OUT' || !session) {
           setLoading(false);
-          setProfileLoading(false);
-        }
-        
-        // If user signs in, we'll wait for profile but with a timeout
-        if (event === 'SIGNED_IN' && session?.user) {
-          setProfileLoading(true);
-          // Set a timeout to stop loading even if profile fails
-          setTimeout(() => {
-            setLoading(false);
-            setProfileLoading(false);
-          }, 3000); // 3 second timeout
         }
       }
     );
@@ -64,16 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('Initial session check:', session);
       setSession(session);
       setUser(session?.user ?? null);
+      setAuthInitialized(true);
       
       if (!session) {
         setLoading(false);
-      } else {
-        // If there's a session, wait for profile with timeout
-        setProfileLoading(true);
-        setTimeout(() => {
-          setLoading(false);
-          setProfileLoading(false);
-        }, 3000);
       }
     });
 
@@ -83,30 +65,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Handle profile loading state
+  // Handle loading state based on auth and profile status
   useEffect(() => {
-    if (user) {
-      // Profile is loading
-      if (profileQueryLoading && profileLoading) {
-        setLoading(true);
-      } else {
-        // Profile loaded (with or without data) or error occurred
-        setLoading(false);
-        setProfileLoading(false);
-      }
-    } else {
+    console.log('Loading state check:', {
+      authInitialized,
+      user: user?.email,
+      profileQueryLoading,
+      profileHasError,
+      profile: profile?.id
+    });
+
+    if (!authInitialized) {
+      setLoading(true);
+      return;
+    }
+
+    if (!user) {
       // No user, stop loading
       setLoading(false);
-      setProfileLoading(false);
+      return;
     }
-  }, [user, profileQueryLoading, profileLoading, profile, profileError]);
+
+    // User exists, check profile status
+    if (profileQueryLoading) {
+      // Profile is still loading, keep loading
+      setLoading(true);
+    } else {
+      // Profile loaded (with or without data) or error occurred
+      // Stop loading in all cases - we'll handle missing profile in the UI
+      setLoading(false);
+    }
+  }, [authInitialized, user, profileQueryLoading, profileHasError, profile]);
 
   // Log profile loading issues
   useEffect(() => {
     if (profileError) {
       console.error('Profile loading error:', profileError);
-      setLoading(false);
-      setProfileLoading(false);
     }
   }, [profileError]);
 
