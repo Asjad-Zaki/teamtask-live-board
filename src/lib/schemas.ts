@@ -1,6 +1,6 @@
 
 import { z } from 'zod';
-
+ 
 // User/Profile schemas
 export const appRoleSchema = z.enum(['admin', 'project_manager', 'developer', 'tester', 'viewer']);
 
